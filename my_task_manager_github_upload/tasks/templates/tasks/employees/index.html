@@ -1,0 +1,164 @@
+{% extends 'tasks/base.html' %}
+
+{% block title %}Medarbejdere | TaskMaster{% endblock %}
+{% block header_eyebrow %}<span data-i18n="admin.dashboardEyebrow">Administratorblik</span>{% endblock %}
+{% block header_title %}<span data-i18n="admin.employeesTitle">Medarbejdere</span>{% endblock %}
+{% block header_actions %}
+    <a href="{% url 'admin_processes' %}" class="ghost-button" data-i18n="nav.processes">Kontrolpanel</a>
+    <a href="{% url 'home' %}" class="ghost-button" data-i18n="common.back">Tilbage</a>
+{% endblock %}
+
+{% block content %}
+    <section class="surface-card section-stack">
+        <div class="actions-row actions-row--between">
+            <div>
+                <p class="eyebrow" data-i18n="admin.manageEmployees">Administrer medarbejdere</p>
+                <h3 class="section-title" data-i18n="admin.teamProgress">Teamoversigt</h3>
+            </div>
+            <div class="inline-actions">
+                <span class="badge badge--primary">{{ admin_metrics.total_employees }}</span>
+            </div>
+        </div>
+
+        <div class="stats-grid stats-grid--wide">
+            <div class="stat-card">
+                <span data-i18n="admin.totalEmployees">Medarbejdere</span>
+                <strong>{{ admin_metrics.total_employees }}</strong>
+            </div>
+            <div class="stat-card">
+                <span data-i18n="admin.attentionRequired">Kraever opmaerksomhed</span>
+                <strong>{{ admin_metrics.attention_required }}</strong>
+            </div>
+            <div class="stat-card">
+                <span data-i18n="admin.overdueSummary">Forsinkede opgaver</span>
+                <strong>{{ admin_metrics.overdue_tasks }}</strong>
+            </div>
+            <div class="stat-card">
+                <span data-i18n="admin.withoutTasks">Uden opgaver</span>
+                <strong>{{ admin_metrics.without_tasks }}</strong>
+            </div>
+        </div>
+
+        <form method="get" class="filters employee-filters">
+            <input
+                type="search"
+                name="q"
+                value="{{ search_query }}"
+                class="search-input"
+                data-i18n-placeholder="admin.searchEmployees"
+                data-i18n-aria-label="admin.searchEmployeesAria"
+                placeholder="Sog efter medarbejdere"
+                aria-label="Sog efter medarbejdere"
+            >
+            <select name="status" class="select-input">
+                <option value="all"{% if status_filter == 'all' %} selected{% endif %} data-i18n="admin.filterAllStatuses">Alle statuser</option>
+                <option value="not_started"{% if status_filter == 'not_started' %} selected{% endif %} data-i18n="status.not_started">Not started</option>
+                <option value="in_progress"{% if status_filter == 'in_progress' %} selected{% endif %} data-i18n="status.in_progress">In progress</option>
+                <option value="paused"{% if status_filter == 'paused' %} selected{% endif %} data-i18n="status.paused">On hold</option>
+                <option value="completed"{% if status_filter == 'completed' %} selected{% endif %} data-i18n="status.completed">Completed</option>
+                <option value="lagging"{% if status_filter == 'lagging' %} selected{% endif %} data-i18n="status.lagging">Lagging</option>
+            </select>
+            <select name="sort" class="select-input">
+                <option value="name"{% if sort_key == 'name' %} selected{% endif %} data-i18n="admin.sortName">Navn</option>
+                <option value="progress"{% if sort_key == 'progress' %} selected{% endif %} data-i18n="admin.sortProgress">Fremdrift</option>
+                <option value="completed"{% if sort_key == 'completed' %} selected{% endif %} data-i18n="admin.sortCompleted">Faerdige opgaver</option>
+                <option value="pending"{% if sort_key == 'pending' %} selected{% endif %} data-i18n="admin.sortPending">Aabne opgaver</option>
+                <option value="overdue"{% if sort_key == 'overdue' %} selected{% endif %} data-i18n="admin.sortOverdue">Forsinkede</option>
+            </select>
+            <button type="submit" class="button" data-i18n="common.apply">Anvend</button>
+        </form>
+
+        <div class="employee-table">
+            {% for employee in employee_summaries %}
+                <article class="employee-row{% if employee.has_attention %} employee-row--attention{% endif %}">
+                    <div class="identity-stack employee-row__identity">
+                        {% include 'tasks/partials/avatar.html' with avatar_url=employee.avatar_url avatar_initials=employee.avatar_initials avatar_alt=employee.name avatar_class='avatar--medium' avatar_size=48 %}
+                        <div class="identity-stack__body">
+                            <strong>{{ employee.name }}</strong>
+                            <p class="muted">@{{ employee.user.username }}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="badge badge--{{ employee.status }}" data-status-badge="{{ employee.status }}">{{ employee.status_label }}</span>
+                    </div>
+                    <div>
+                        {% if employee.current_stage_key %}
+                            <strong data-i18n="{{ employee.current_stage_key }}">Awaiting assignment</strong>
+                        {% else %}
+                            <strong>{{ employee.current_stage }}</strong>
+                        {% endif %}
+                        <div class="task-meta">
+                            <span class="badge">{{ employee.completed_count }} / {{ employee.task_total }}</span>
+                            {% if employee.paused_count %}
+                                <span class="badge badge--paused">{{ employee.paused_count }} <span data-i18n="task.pausedShort">pa pause</span></span>
+                            {% endif %}
+                            {% if employee.overdue_count %}
+                                <span class="badge badge--warning">{{ employee.overdue_count }} <span data-i18n="admin.overdueTasks">forsinkede opgaver</span></span>
+                            {% endif %}
+                            {% if employee.due_soon_count %}
+                                <span class="badge">{{ employee.due_soon_count }} <span data-i18n="admin.dueSoon">Snart deadline</span></span>
+                            {% endif %}
+                            {% if not employee.task_total %}
+                                <span class="badge" data-i18n="admin.withoutTasks">Uden opgaver</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="progress-bar" aria-hidden="true">
+                            <div class="progress-bar__value" style="--progress: {{ employee.progress_percent }};"></div>
+                        </div>
+                        <p class="muted">{{ employee.progress_percent }}%</p>
+                        <p class="muted">
+                            <span data-i18n="admin.lastUpdate">Seneste opdatering</span>:
+                            {% if employee.last_update_text %}
+                                {{ employee.last_update_text }}
+                            {% else %}
+                                <span data-i18n="admin.noUpdate">Ingen opdateringer endnu.</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="inline-actions">
+                        <a href="{% url 'employee_assign_task' employee.user.id %}" class="ghost-button" data-i18n="admin.quickAssign">Tilfoj opgave</a>
+                        <a href="{% url 'employee_detail' employee.user.id %}" class="ghost-button" data-i18n="admin.openEmployeeWorkspace">Aben arbejdsprofil</a>
+                        <a href="{% url 'employee_account' employee.user.id %}" class="ghost-button" data-i18n="admin.manageAccount">Administrer konto</a>
+                    </div>
+                </article>
+            {% empty %}
+                <div class="empty-state">
+                    <p data-i18n="admin.noEmployees">Ingen medarbejdere fundet.</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if can_manage_admin_roles %}
+            <div class="surface-card section-stack">
+                <div>
+                    <p class="eyebrow" data-i18n="admin.adminAccounts">Administratorer</p>
+                    <h4 class="section-title" data-i18n="admin.adminAccountsTitle">Konti med administratoradgang</h4>
+                    <p class="muted" data-i18n="admin.adminAccountsHelp">Kun ejeren af systemet kan tildele eller fjerne administratorrettigheder.</p>
+                </div>
+                <div class="participant-status-list participant-status-list--compact">
+                    {% for admin_account in admin_accounts %}
+                        <div class="participant-status-pill">
+                            {% include 'tasks/partials/avatar.html' with avatar_url=admin_account.avatar_url avatar_initials=admin_account.avatar_initials avatar_alt=admin_account.user.first_name|default:admin_account.user.username avatar_class='avatar--small' avatar_size=40 %}
+                            <div class="participant-status-pill__meta">
+                                <strong class="participant-status-pill__name">{{ admin_account.user.first_name|default:admin_account.user.username }}</strong>
+                                <span class="muted">@{{ admin_account.user.username }}</span>
+                            </div>
+                            <div class="inline-actions">
+                                {% if admin_account.is_site_owner %}
+                                    <span class="badge badge--primary" data-i18n="admin.siteOwner">Ejer</span>
+                                {% else %}
+                                    <span class="badge" data-i18n="role.admin">Administrator</span>
+                                    <a href="{% url 'employee_account' admin_account.user.id %}" class="ghost-button" data-i18n="admin.manageAccount">Administrer konto</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="muted" data-i18n="admin.noAdditionalAdmins">Der er ingen ekstra administratorer endnu.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

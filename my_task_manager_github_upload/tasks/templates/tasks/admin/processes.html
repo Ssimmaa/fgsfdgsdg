@@ -1,0 +1,470 @@
+{% extends 'tasks/base.html' %}
+
+{% block page_id %}operations-center{% endblock %}
+{% block title %}Kontrolpanel | TaskMaster{% endblock %}
+{% block header_eyebrow %}<span data-i18n="admin.processesEyebrow">Kontrolpanel</span>{% endblock %}
+{% block header_title %}<span data-i18n="admin.processesTitle">Teamoverblik</span>{% endblock %}
+{% block header_actions %}
+    <a href="{% url 'task_list_page' %}" class="ghost-button" data-i18n="nav.taskList">Opgaveliste</a>
+    <a href="{% url 'create_task' %}" class="button" data-i18n="admin.assignTask">Tildel opgave</a>
+{% endblock %}
+
+{% block content %}
+<div class="operations-container">
+    <section class="surface-card operations-hero" data-reveal>
+        <div class="operations-hero__copy">
+            <p class="eyebrow" data-i18n="admin.processesEyebrow">Kontrolpanel</p>
+            <h3 class="section-title" data-i18n="admin.processesSummaryTitle">Systemoverblik</h3>
+            <p class="muted" data-i18n="admin.processesLead">
+                Fa et hurtigt overblik over kapacitet, flaskehalse og samtaler, sa du kan prioritere naeste handling.
+            </p>
+        </div>
+        <div class="operations-hero__actions">
+            <a href="{% url 'employee_directory' %}" class="ghost-button" data-i18n="admin.manageEmployees">Administrer medarbejdere</a>
+            <a href="{% url 'create_task' %}" class="button" data-i18n="admin.assignTask">Tildel opgave</a>
+        </div>
+        <div class="operations-search">
+            <input
+                type="search"
+                class="search-input"
+                placeholder="Sog efter medarbejder, opgave, status eller deadline"
+                aria-label="Sog i driftscenteret"
+                data-operations-search
+                data-wall-search
+                data-i18n-placeholder="operations.searchPlaceholder"
+                data-i18n-aria-label="operations.searchAria"
+            >
+            <button type="button" class="ghost-button ghost-button--compact" data-operations-search-clear data-i18n="operations.clearSearch">Ryd</button>
+            <p class="muted operations-search__summary" data-operations-search-summary data-employee-total="{{ employee_summaries|length }}" data-task-total="{{ stats.total }}">
+                {{ employee_summaries|length }} medarbejdere · {{ stats.total }} opgaver
+            </p>
+        </div>
+    </section>
+
+    <section class="operations-metric-grid" aria-label="Driftsmaalinger" data-i18n-aria-label="operations.metricsAria">
+        <article class="surface-card operations-metric" data-reveal>
+            <span data-i18n="admin.totalEmployees">Medarbejdere</span>
+            <strong data-admin-stat="total_employees">{{ admin_metrics.total_employees }}</strong>
+            <small data-i18n="operations.totalEmployeesHelp">Aktive brugere i teamet</small>
+        </article>
+        <article class="surface-card operations-metric" data-reveal>
+            <span data-i18n="admin.currentlyWorking">Arbejder nu</span>
+            <strong data-admin-stat="in_progress">{{ admin_metrics.in_progress }}</strong>
+            <small data-i18n="operations.inProgressHelp">Medarbejdere med igangvaerende arbejde</small>
+        </article>
+        <article class="surface-card operations-metric" data-reveal>
+            <span data-i18n="admin.attentionRequired">Kraever opmaerksomhed</span>
+            <strong data-admin-stat="attention_required">{{ admin_metrics.attention_required }}</strong>
+            <small data-i18n="operations.attentionHelp">Deadline, blokering eller manglende opgave</small>
+        </article>
+        <article class="surface-card operations-metric" data-reveal>
+            <span data-i18n="admin.systemProgress">Samlet systemfremdrift</span>
+            <strong data-admin-progress-label>{{ admin_metrics.overall_progress }}%</strong>
+            <div class="progress-bar" aria-hidden="true">
+                <div class="progress-bar__value" data-admin-progress style="--progress: {{ admin_metrics.overall_progress }};"></div>
+            </div>
+        </article>
+    </section>
+
+    <section class="surface-card operations-priority-strip" data-reveal>
+        <div class="operations-priority-strip__header">
+            <div>
+                <p class="eyebrow" data-i18n="operations.priorityEyebrow">Fokus</p>
+                <h3 class="section-title">
+                    <span class="section-marker section-marker--attention" aria-hidden="true"></span>
+                    <span data-i18n="operations.priorityTitle">Hvad kraever opmaerksomhed nu</span>
+                </h3>
+            </div>
+            <span class="badge">
+                <span data-i18n="operations.updatedAt">Opdateret</span> {% now "H:i" %}
+            </span>
+        </div>
+        <div class="operations-priority-grid">
+            <a href="#tasks-flow" class="priority-card priority-card--danger">
+                <span class="priority-card__label" data-i18n="operations.priorityOverdue">Forsinkede opgaver</span>
+                <strong>{{ admin_metrics.overdue_tasks }}</strong>
+                <small data-i18n="{% if admin_metrics.overdue_tasks %}operations.priorityOverdueHelp{% else %}operations.noOverdue{% endif %}">
+                    {% if admin_metrics.overdue_tasks %}Kraever hurtig opfolgning{% else %}Ingen forsinkede opgaver{% endif %}
+                </small>
+            </a>
+            <a href="#attention-workspace" class="priority-card priority-card--info">
+                <span class="priority-card__label" data-i18n="operations.priorityWithoutTasks">Medarbejdere uden opgaver</span>
+                <strong>{{ admin_metrics.without_tasks }}</strong>
+                <small data-i18n="{% if admin_metrics.without_tasks %}operations.priorityWithoutTasksHelp{% else %}operations.noWithoutTasks{% endif %}">
+                    {% if admin_metrics.without_tasks %}Klar til ny opgave{% else %}Alle har tydeligt arbejde{% endif %}
+                </small>
+            </a>
+            <a href="#attention-workspace" class="priority-card priority-card--paused">
+                <span class="priority-card__label" data-i18n="operations.priorityPaused">Opgaver pa pause</span>
+                <strong>{{ admin_metrics.paused_assignments }}</strong>
+                <small data-i18n="{% if admin_metrics.paused_assignments %}operations.priorityPausedHelp{% else %}operations.noPaused{% endif %}">
+                    {% if admin_metrics.paused_assignments %}Tjek om noget blokerer{% else %}Ingen opgaver pa pause{% endif %}
+                </small>
+            </a>
+        </div>
+    </section>
+
+    <nav class="operations-tabs" aria-label="Kontrolpanel sektioner" data-i18n-aria-label="operations.tabsAria" data-reveal>
+        <a href="#team-section" class="filter-button is-active" data-operations-jump data-i18n="operations.tabTeam">Team</a>
+        <a href="#tasks-flow" class="filter-button" data-operations-jump data-i18n="operations.tabTasks">Opgaver</a>
+        <a href="#activity-log" class="filter-button" data-operations-jump data-i18n="operations.tabLog">Journal</a>
+    </nav>
+
+    <div class="operations-layout">
+        <div class="operations-main-stack">
+        <section class="surface-card operations-panel operations-panel--team" id="team-section" data-reveal>
+            <div class="operations-panel__header">
+                <div>
+                    <p class="eyebrow" data-i18n="admin.processesTeamTitle">Medarbejderoverblik</p>
+                    <h3 class="section-title">
+                        <span class="section-marker section-marker--team" aria-hidden="true"></span>
+                        <span data-i18n="operations.teamTitle">Team status</span>
+                    </h3>
+                </div>
+                <a href="{% url 'employee_directory' %}" class="ghost-button ghost-button--compact" data-i18n="admin.manageEmployees">Administrer medarbejdere</a>
+            </div>
+
+            <div class="operations-table-wrap">
+                <table class="operations-table">
+                    <thead>
+                        <tr>
+                            <th data-i18n="admin.employeeProfile">Medarbejderprofil</th>
+                            <th data-i18n="admin.employeeStatus">Status</th>
+                            <th data-i18n="operations.openWork">Aabent arbejde</th>
+                            <th data-i18n="employee.progress">Fremdrift</th>
+                            <th data-i18n="common.open">Aben</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for employee in employee_summaries %}
+                            <tr
+                                data-operations-employee-row
+                                data-search="{{ employee.name|lower }} {{ employee.user.username|lower }} {{ employee.status }} {{ employee.status_label|lower }} {{ employee.current_stage|default:''|lower }} {{ employee.pending_count }} {{ employee.in_progress_count }} {{ employee.paused_count }}{% if employee.status == 'paused' or employee.paused_count %} on hold pause paused pa pause на паузе на паузі{% endif %}"
+                            >
+                                <td>
+                                    <div class="operations-person">
+                                        {% include 'tasks/partials/avatar.html' with avatar_url=employee.avatar_url avatar_initials=employee.avatar_initials avatar_alt=employee.name avatar_class='avatar--small' avatar_size=40 %}
+                                        <span>
+                                            <strong>{{ employee.name }}</strong>
+                                            <small>@{{ employee.user.username }}</small>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge badge--{{ employee.status }}" data-status-badge="{{ employee.status }}">{{ employee.status_label }}</span>
+                                    {% if employee.current_stage %}
+                                        <small class="operations-stage">{{ employee.current_stage }}</small>
+                                    {% else %}
+                                        <small class="operations-stage" data-i18n="employee.awaitingAssignment">Afventer tildeling</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="operations-count-stack">
+                                        <strong>{{ employee.pending_count }}</strong>
+                                        <small>
+                                            {{ employee.in_progress_count }}
+                                            <span data-i18n="task.inProgressShort">i gang</span>
+                                            {% if employee.paused_count %} / {{ employee.paused_count }} <span data-i18n="task.pausedShort">pa pause</span>{% endif %}
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="operations-progress">
+                                        <div class="progress-bar" aria-hidden="true">
+                                            <div class="progress-bar__value" style="--progress: {{ employee.progress_percent }};"></div>
+                                        </div>
+                                        <span>{{ employee.progress_percent }}%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="{% url 'employee_detail' employee.user.id %}" class="ghost-button ghost-button--compact" data-i18n="common.open">Aben</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="operations-empty" data-i18n="admin.noEmployees">Ingen medarbejdere fundet.</td>
+                            </tr>
+                        {% endfor %}
+                        <tr data-operations-employee-empty hidden>
+                            <td colspan="5" class="operations-empty" data-i18n="operations.noEmployeeMatches">Ingen medarbejdere matcher sogningen.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="surface-card operations-panel operations-panel--workload" data-reveal>
+            <div class="operations-panel__header">
+                <div>
+                    <p class="eyebrow" data-i18n="admin.workloadEyebrow">Belastning</p>
+                    <h3 class="section-title">
+                        <span class="section-marker section-marker--workload" aria-hidden="true"></span>
+                        <span data-i18n="admin.workloadTitle">Kapacitet og opfolgning</span>
+                    </h3>
+                </div>
+            </div>
+            <div class="operations-workload-grid">
+                <article class="operations-mini-panel">
+                    <p class="eyebrow" data-i18n="admin.workloadOverloaded">Hoj belastning</p>
+                    <div class="operations-list">
+                        {% for employee in admin_workload.overloaded %}
+                            <a href="{{ employee.detail_url }}" class="operations-list-item">
+                                <span class="operations-list-item__title">{{ employee.name }}</span>
+                                <span class="muted">{{ employee.pending_count }} <span data-i18n="employee.pendingTasks">Tilbage</span> &middot; {{ employee.overdue_count }} <span data-i18n="admin.overdueSummary">Forsinkede opgaver</span></span>
+                            </a>
+                        {% empty %}
+                            <p class="muted" data-i18n="admin.workloadNoOverloaded">Ingen er overbelastede lige nu.</p>
+                        {% endfor %}
+                    </div>
+                </article>
+                <article class="operations-mini-panel">
+                    <p class="eyebrow" data-i18n="admin.workloadAvailable">Ledig kapacitet</p>
+                    <div class="operations-list">
+                        {% for employee in admin_workload.available %}
+                            <a href="{{ employee.detail_url }}" class="operations-list-item">
+                                <span class="operations-list-item__title">{{ employee.name }}</span>
+                                <span class="muted">{{ employee.task_total }} <span data-i18n="nav.tasks">Opgaver</span> &middot; {{ employee.progress_percent }}%</span>
+                            </a>
+                        {% empty %}
+                            <p class="muted" data-i18n="admin.workloadNoAvailable">Alle er optaget lige nu.</p>
+                        {% endfor %}
+                    </div>
+                </article>
+                <article class="operations-mini-panel">
+                    <p class="eyebrow" data-i18n="admin.workloadFocus">Fokusopgaver</p>
+                    <div class="operations-list">
+                        {% for task in admin_workload.focus %}
+                            <a href="{{ task.detail_url }}" class="operations-list-item">
+                                <span class="operations-list-item__title">{{ task.title }}</span>
+                                <span class="muted">
+                                    <span data-i18n="priority.{{ task.priority }}">{{ task.priority_label }}</span>
+                                    {% if task.deadline_text %} &middot; {{ task.deadline_text }}{% endif %}
+                                </span>
+                            </a>
+                        {% empty %}
+                            <p class="muted" data-i18n="admin.noPriorityWork">Intet kraever opmaerksomhed lige nu.</p>
+                        {% endfor %}
+                    </div>
+                </article>
+            </div>
+        </section>
+        </div>
+
+        <aside class="operations-side-stack">
+            <section class="surface-card operations-panel" id="task-requests" data-reveal>
+                <div class="operations-panel__header">
+                    <div>
+                        <p class="eyebrow" data-i18n="chat.requestsTitle">Beskeder fra medarbejdere</p>
+                        <h3 class="section-title">
+                            <span class="section-marker section-marker--messages" aria-hidden="true"></span>
+                            <span>{{ task_requests|length }}</span>
+                        </h3>
+                    </div>
+                </div>
+                <div class="operations-list">
+                    {% for request in task_requests %}
+                        <a href="{{ request.detail_url }}#task-chat" class="operations-list-item">
+                            <span class="operations-list-item__title">{{ request.task_title }}</span>
+                            <span class="muted">{{ request.author_name }} &middot; {{ request.created_at_text }}</span>
+                            <small>{{ request.body_preview }}</small>
+                        </a>
+                    {% empty %}
+                        <p class="muted" data-i18n="chat.noRequests">Ingen afventende beskeder.</p>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="surface-card operations-panel" id="attention-workspace" data-reveal>
+                <div class="operations-panel__header">
+                    <div>
+                        <p class="eyebrow" data-i18n="admin.attentionRequired">Kraever opmaerksomhed</p>
+                        <h3 class="section-title">
+                            <span class="section-marker section-marker--attention" aria-hidden="true"></span>
+                            <span data-i18n="operations.attentionTitle">Naeste handlinger</span>
+                        </h3>
+                    </div>
+                </div>
+                <div class="operations-list">
+                    {% for task in admin_attention.due_soon_tasks %}
+                        <a href="{{ task.detail_url }}" class="operations-list-item operations-list-item--warning">
+                            <span class="operations-list-item__title">{{ task.title }}</span>
+                            <span class="muted">{{ task.deadline_text }}</span>
+                        </a>
+                    {% endfor %}
+                    {% for assignment in admin_attention.paused_assignments %}
+                        <a href="{% url 'task_detail' assignment.task.id %}" class="operations-list-item">
+                            <span class="operations-list-item__title">{{ assignment.task.title }}</span>
+                            <span class="muted">{{ assignment.user.first_name|default:assignment.user.username }} &middot; <span data-i18n="status.paused">On hold</span></span>
+                        </a>
+                    {% endfor %}
+                    {% for employee in admin_attention.without_tasks_employees %}
+                        <a href="{% url 'employee_assign_task' employee.user.id %}" class="operations-list-item">
+                            <span class="operations-list-item__title">{{ employee.name }}</span>
+                            <span class="muted" data-i18n="employee.awaitingAssignment">Afventer tildeling</span>
+                        </a>
+                    {% empty %}
+                        {% if not admin_attention.due_soon_tasks and not admin_attention.paused_assignments %}
+                            <p class="muted" data-i18n="admin.noPriorityWork">Intet kraever opmaerksomhed lige nu.</p>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="surface-card operations-panel operations-activity-panel" id="activity-log" data-reveal>
+                <div class="operations-panel__header">
+                    <div>
+                        <p class="eyebrow" data-i18n="siteLog.eventsEyebrow">Aktivitetsfeed</p>
+                        <h3 class="section-title">
+                            <span class="section-marker section-marker--log" aria-hidden="true"></span>
+                            <span data-i18n="siteLog.open">Handlingslog</span>
+                        </h3>
+                    </div>
+                    <span class="badge">{{ system_event_entries|length }} <span data-i18n="siteLog.eventsCount">haendelser</span></span>
+                </div>
+                <div class="activity-log-tools" data-activity-log-root data-activity-log-expanded="false">
+                    <input
+                        type="search"
+                        class="search-input search-input--compact"
+                        placeholder="Sog i journal"
+                        aria-label="Sog i journal"
+                        data-activity-log-search
+                        data-i18n-placeholder="activityLog.searchPlaceholder"
+                        data-i18n-aria-label="activityLog.searchAria"
+                    >
+                    <div class="filters activity-log-filters" aria-label="Filtrer journal" data-i18n-aria-label="activityLog.filtersAria">
+                        <button type="button" class="filter-button filter-button--compact is-active" data-activity-log-filter="all" data-i18n="activityLog.filterAll">Alle</button>
+                        <button type="button" class="filter-button filter-button--compact" data-activity-log-filter="task" data-i18n="activityLog.filterTasks">Opgaver</button>
+                        <button type="button" class="filter-button filter-button--compact" data-activity-log-filter="employee" data-i18n="activityLog.filterEmployees">Medarbejdere</button>
+                    </div>
+                </div>
+                <div class="system-log-list system-log-list--compact">
+                    {% for entry in system_event_entries %}
+                        <article
+                            class="system-log-entry system-log-entry--compact"
+                            data-activity-log-entry
+                            {% if forloop.counter > 3 %}data-activity-log-extra{% endif %}
+                            data-activity-log-scope="{% if entry.scope_key == 'siteLog.scopeTask' %}task{% else %}employee{% endif %}"
+                            data-search="{{ entry.actor_name|lower }} {{ entry.detail_label|lower }} {{ entry.message|lower }} {{ entry.message_employee|default:''|lower }} {{ entry.message_task|default:''|lower }} {{ entry.message_stage|default:''|lower }}"
+                        >
+                            {% include 'tasks/partials/avatar.html' with avatar_url=entry.actor_avatar_url avatar_initials=entry.actor_avatar_initials avatar_alt=entry.actor_name avatar_class='avatar--small' avatar_size=36 %}
+                            <div class="system-log-entry__body">
+                                <div class="system-log-entry__meta">
+                                    <span class="badge" data-i18n="{{ entry.scope_key }}">Task event</span>
+                                    <span class="muted">{{ entry.created_at_text }}</span>
+                                </div>
+                                <p
+                                    {% if entry.message_key %}data-i18n="{{ entry.message_key }}"{% endif %}
+                                    {% if entry.message_employee %}data-i18n-var-employee="{{ entry.message_employee }}"{% endif %}
+                                    {% if entry.message_task %}data-i18n-var-task="{{ entry.message_task }}"{% endif %}
+                                    {% if entry.message_stage %}data-i18n-var-stage="{{ entry.message_stage }}"{% endif %}
+                                    {% if entry.message_stage_key %}data-i18n-var-key-stage="{{ entry.message_stage_key }}"{% endif %}
+                                    {% if entry.message_name %}data-i18n-var-name="{{ entry.message_name }}"{% endif %}
+                                    {% if entry.message_title %}data-i18n-var-title="{{ entry.message_title }}"{% endif %}
+                                    {% if entry.message_status_key %}data-i18n-var-key-status="{{ entry.message_status_key }}"{% endif %}
+                                >{{ entry.message }}</p>
+                                <a href="{{ entry.detail_url }}" class="subtle-link">{{ entry.detail_label }}</a>
+                            </div>
+                        </article>
+                    {% empty %}
+                        <p class="muted" data-i18n="siteLog.eventsEmpty">Ingen systemhaendelser endnu.</p>
+                    {% endfor %}
+                    <p class="muted operations-empty" data-activity-log-empty hidden data-i18n="activityLog.noMatches">Ingen handlinger matcher filtret.</p>
+                </div>
+                {% if system_event_entries|length > 3 %}
+                    <button type="button" class="ghost-button ghost-button--compact activity-log-toggle" data-activity-log-toggle data-i18n="activityLog.showMore">Vis mere</button>
+                {% endif %}
+            </section>
+        </aside>
+    </div>
+
+    <section
+        id="tasks-flow"
+        class="surface-card operations-panel operations-flow"
+        data-task-wall-root
+        data-board-endpoint="{% url 'board_snapshot' %}"
+        data-user-can-edit="true"
+        data-initial-query=""
+        data-initial-filter="all"
+        data-initial-priority="all"
+        data-reveal
+    >
+        <div class="operations-panel__header">
+            <div>
+                <p class="eyebrow" data-i18n="admin.processesWallEyebrow">Live flow</p>
+                <h3 class="section-title">
+                    <span class="section-marker section-marker--tasks" aria-hidden="true"></span>
+                    <span data-i18n="admin.processesWallTitle">Opgaver pa tvers af hele teamet</span>
+                </h3>
+                <p class="muted" data-i18n="admin.processesWallHelp">Hold oje med deadlines og fordelingen mellem aktive, opgaver pa pause og afsluttede opgaver.</p>
+            </div>
+            <div class="task-meta">
+                <span class="badge badge--primary"><span data-stat="total">{{ stats.total }}</span> <span data-i18n="board.visible">synlige</span></span>
+                <span class="badge"><span data-wall-stat="due_soon">{{ wall_metrics.due_soon }}</span> <span data-i18n="admin.dueSoon">Snart deadline</span></span>
+                <span class="badge"><span data-wall-stat="paused">{{ wall_metrics.paused }}</span> <span data-i18n="status.paused">On hold</span></span>
+            </div>
+        </div>
+
+        <div class="operations-flow__controls">
+            <select class="select-input select-input--compact" data-priority-filter>
+                <option value="all" data-i18n="filters.priorityAll">Alle prioriteter</option>
+                <option value="high" data-i18n="priority.high">High</option>
+                <option value="medium" data-i18n="priority.medium">Medium</option>
+                <option value="low" data-i18n="priority.low">Low</option>
+            </select>
+            <div class="filters" data-filter-group aria-label="Filtrer opgaver" data-i18n-aria-label="wall.filtersAria">
+                <button type="button" class="filter-button is-active" data-wall-filter="all" data-i18n="wall.filterAll">Alle</button>
+                <button type="button" class="filter-button" data-wall-filter="active" data-i18n="wall.filterActive">Aktive</button>
+                <button type="button" class="filter-button" data-wall-filter="paused" data-i18n="wall.filterPaused">Pa pause</button>
+                <button type="button" class="filter-button" data-wall-filter="deadline" data-i18n="wall.filterDeadline">Har deadline</button>
+                <button type="button" class="filter-button" data-wall-filter="completed" data-i18n="wall.filterCompleted">Faerdige</button>
+            </div>
+        </div>
+
+        <section class="task-wall-grid operations-flow__grid" data-task-wall-columns>
+            <article class="task-wall-column" data-wall-column="not_started">
+                <header class="task-wall-column__header">
+                    <div>
+                        <p class="eyebrow" data-i18n="status.not_started">Not started</p>
+                        <h4 class="section-title" data-i18n="wall.columnFocus">Klar til start</h4>
+                    </div>
+                    <span class="badge" data-wall-count="not_started">0</span>
+                </header>
+                <div class="task-wall-column__body" data-wall-list="not_started"></div>
+            </article>
+
+            <article class="task-wall-column" data-wall-column="in_progress">
+                <header class="task-wall-column__header">
+                    <div>
+                        <p class="eyebrow" data-i18n="status.in_progress">In progress</p>
+                        <h4 class="section-title" data-i18n="wall.columnFocusActive">I bevagelse</h4>
+                    </div>
+                    <span class="badge" data-wall-count="in_progress">0</span>
+                </header>
+                <div class="task-wall-column__body" data-wall-list="in_progress"></div>
+            </article>
+
+            <article class="task-wall-column" data-wall-column="paused">
+                <header class="task-wall-column__header">
+                    <div>
+                        <p class="eyebrow" data-i18n="status.paused">On hold</p>
+                        <h4 class="section-title" data-i18n="wall.columnFocusPaused">Pa pause</h4>
+                    </div>
+                    <span class="badge" data-wall-count="paused">0</span>
+                </header>
+                <div class="task-wall-column__body" data-wall-list="paused"></div>
+            </article>
+
+            <article class="task-wall-column" data-wall-column="completed">
+                <header class="task-wall-column__header">
+                    <div>
+                        <p class="eyebrow" data-i18n="status.completed">Completed</p>
+                        <h4 class="section-title" data-i18n="wall.columnFocusCompleted">Faerdiggjort</h4>
+                    </div>
+                    <span class="badge" data-wall-count="completed">0</span>
+                </header>
+                <div class="task-wall-column__body" data-wall-list="completed"></div>
+            </article>
+        </section>
+    </section>
+</div>
+{% endblock %}

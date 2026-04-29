@@ -1,0 +1,439 @@
+{% extends 'tasks/base.html' %}
+
+{% block page_id %}board{% endblock %}
+{% block title %}Opgaver | TaskMaster{% endblock %}
+{% block header_eyebrow %}<span data-i18n="board.headerEyebrow">Overblik</span>{% endblock %}
+{% block header_title %}<span data-i18n="board.headerTitle">Dagens opgaver</span>{% endblock %}
+{% block header_actions %}
+    <a href="{% url 'create_task' %}" class="button" data-i18n="board.createTask">Opret ny opgave</a>
+{% endblock %}
+
+{% block content %}
+    <div
+        data-board-root
+        data-board-endpoint="{% url 'board_snapshot' %}"
+        data-user-can-edit="{% if request.user.is_superuser %}true{% else %}false{% endif %}"
+        data-initial-query="{{ current_query }}"
+        data-initial-filter="{{ current_filter }}"
+        data-initial-priority="{{ current_priority }}"
+    >
+        {% if request.user.is_superuser %}
+            <section class="surface-card admin-board-summary" data-reveal>
+                <div class="actions-row actions-row--between">
+                    <div>
+                        <p class="eyebrow" data-i18n="admin.boardOverviewEyebrow">Drift</p>
+                        <h3 class="section-title" data-i18n="admin.boardOverviewTitle">Aktuel opgavestatus</h3>
+                    </div>
+                    <span class="badge"><span data-stat="total">{{ stats.total }}</span> <span data-i18n="board.visible">synlige</span></span>
+                </div>
+
+                <div class="stats-grid stats-grid--wide">
+                    <div class="stat-card">
+                        <span data-i18n="board.total">Alle</span>
+                        <strong data-stat="total">{{ stats.total }}</strong>
+                    </div>
+                    <div class="stat-card">
+                        <span data-i18n="board.active">Aktive</span>
+                        <strong data-stat="active">{{ stats.active }}</strong>
+                    </div>
+                    <div class="stat-card">
+                        <span data-i18n="board.completed">Faerdige</span>
+                        <strong data-stat="completed">{{ stats.completed }}</strong>
+                    </div>
+                    <div class="stat-card">
+                        <span data-i18n="board.withDeadline">Med deadline</span>
+                        <strong data-stat="upcoming">{{ stats.upcoming }}</strong>
+                    </div>
+                </div>
+
+                <div class="overall-progress">
+                    <div class="overall-progress__header">
+                        <strong data-i18n="board.overallProgress">Samlet fremdrift</strong>
+                        <span class="badge badge--primary" data-stat-progress-label>
+                            {{ stats.completion_percent }}%
+                        </span>
+                    </div>
+                    <div class="progress-bar progress-bar--board" aria-hidden="true">
+                        <div class="progress-bar__value" data-board-progress style="--progress: {{ stats.completion_percent }};"></div>
+                    </div>
+                    <p class="muted" data-stat-progress-text>
+                        {{ stats.completed }} af {{ stats.total }} opgaver er fuldfort.
+                    </p>
+                </div>
+            </section>
+        {% elif show_employee_intro %}
+            <section class="hero" data-reveal>
+                <div class="hero__panel">
+                    <p class="eyebrow" data-i18n="board.dashboard">Team dashboard</p>
+                    <h3 class="hero__title" data-i18n="board.heroTitle">Hold styr pa opgaver, ansvarlige og deadlines.</h3>
+                    <p class="hero__text" data-i18n="board.heroText">
+                        Filtrer hurtigt mellem aktive og afsluttede opgaver, og ga direkte videre til detaljerne uden unodige klik.
+                    </p>
+                </div>
+
+                <div class="surface-card" data-reveal>
+                    <p class="eyebrow" data-i18n="board.statusNow">Status lige nu</p>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span data-i18n="board.total">Alle</span>
+                            <strong data-stat="total">{{ stats.total }}</strong>
+                        </div>
+                        <div class="stat-card">
+                            <span data-i18n="board.active">Aktive</span>
+                            <strong data-stat="active">{{ stats.active }}</strong>
+                        </div>
+                        <div class="stat-card">
+                            <span data-i18n="board.completed">Faerdige</span>
+                            <strong data-stat="completed">{{ stats.completed }}</strong>
+                        </div>
+                        <div class="stat-card">
+                            <span data-i18n="board.withDeadline">Med deadline</span>
+                            <strong data-stat="upcoming">{{ stats.upcoming }}</strong>
+                        </div>
+                    </div>
+
+                    <div class="overall-progress">
+                        <div class="overall-progress__header">
+                            <strong data-i18n="board.overallProgress">Samlet fremdrift</strong>
+                            <span class="badge badge--primary" data-stat-progress-label>
+                                {{ stats.completion_percent }}%
+                            </span>
+                        </div>
+                        <div class="progress-bar progress-bar--board" aria-hidden="true">
+                            <div class="progress-bar__value" data-board-progress style="--progress: {{ stats.completion_percent }};"></div>
+                        </div>
+                        <p class="muted" data-stat-progress-text>
+                            {{ stats.completed }} af {{ stats.total }} opgaver er fuldfort.
+                        </p>
+                    </div>
+                </div>
+            </section>
+        {% endif %}
+
+        {% if request.user.is_superuser %}
+            <section class="surface-card admin-dashboard" data-reveal>
+                <div class="actions-row actions-row--between">
+                    <div>
+                        <p class="eyebrow" data-i18n="admin.homeEyebrow">Administrators overblik</p>
+                        <h3 class="section-title" data-i18n="admin.homeTitle">Det vigtigste lige nu</h3>
+                    </div>
+                    <div class="inline-actions">
+                        <a href="{% url 'admin_processes' %}#activity-log" class="ghost-button" data-i18n="siteLog.open">Handlingslog</a>
+                        <a href="{% url 'task_list_page' %}" class="ghost-button" data-i18n="nav.taskList">Opgaveliste</a>
+                        <a href="{% url 'admin_processes' %}" class="ghost-button" data-i18n="nav.processes">Kontrolpanel</a>
+                        <a href="{% url 'employee_directory' %}" class="ghost-button" data-i18n="admin.manageEmployees">Administrer medarbejdere</a>
+                        <a href="{% url 'create_task' %}" class="button" data-i18n="admin.assignTask">Tildel opgave</a>
+                    </div>
+                </div>
+
+                <div class="stats-grid stats-grid--wide">
+                    <div class="stat-card">
+                        <span data-i18n="admin.totalEmployees">Medarbejdere</span>
+                        <strong data-admin-stat="total_employees">{{ admin_metrics.total_employees }}</strong>
+                    </div>
+                    <div class="stat-card">
+                        <span data-i18n="admin.currentlyWorking">Arbejder nu</span>
+                        <strong data-admin-stat="in_progress">{{ admin_metrics.in_progress }}</strong>
+                    </div>
+                    <div class="stat-card">
+                        <span data-i18n="status.paused">On hold</span>
+                        <strong data-admin-stat="paused">{{ admin_metrics.paused }}</strong>
+                    </div>
+                    <div class="stat-card">
+                        <span data-i18n="admin.finished">Faerdige</span>
+                        <strong data-admin-stat="completed">{{ admin_metrics.completed }}</strong>
+                    </div>
+                    <div class="stat-card">
+                        <span data-i18n="status.not_started">Not started</span>
+                        <strong data-admin-stat="not_started">{{ admin_metrics.not_started }}</strong>
+                    </div>
+                    <div class="stat-card">
+                        <span data-i18n="admin.lagging">Sakker bagud</span>
+                        <strong data-admin-stat="lagging">{{ admin_metrics.lagging }}</strong>
+                    </div>
+                    <div class="stat-card">
+                        <span data-i18n="admin.overdueSummary">Forsinkede opgaver</span>
+                        <strong data-admin-stat="overdue_tasks">{{ admin_metrics.overdue_tasks }}</strong>
+                    </div>
+                    <a href="{% url 'admin_processes' %}#attention-workspace" class="stat-card stat-card--link">
+                        <span data-i18n="admin.attentionRequired">Kraever opmaerksomhed</span>
+                        <strong data-admin-stat="attention_required">{{ admin_metrics.attention_required }}</strong>
+                    </a>
+                    <div class="stat-card">
+                        <span data-i18n="admin.withoutTasks">Uden opgaver</span>
+                        <strong data-admin-stat="without_tasks">{{ admin_metrics.without_tasks }}</strong>
+                    </div>
+                    <a href="{% url 'admin_processes' %}#task-requests" class="stat-card stat-card--link">
+                        <span data-i18n="admin.chatRequests">Foresporgsler fra medarbejdere</span>
+                        <strong data-admin-stat="request_count">{{ admin_metrics.request_count }}</strong>
+                    </a>
+                </div>
+
+                <div class="team-overview admin-home-overview">
+                    <div class="surface-card section-stack">
+                        <div class="overall-progress">
+                            <div class="overall-progress__header">
+                                <strong data-i18n="admin.systemProgress">Samlet systemfremdrift</strong>
+                                <span class="badge badge--primary" data-admin-progress-label>{{ admin_metrics.overall_progress }}%</span>
+                            </div>
+                            <div class="progress-bar progress-bar--board" aria-hidden="true">
+                                <div class="progress-bar__value" data-admin-progress style="--progress: {{ admin_metrics.overall_progress }};"></div>
+                            </div>
+                        </div>
+                        <div class="attention-list" data-home-attention-list>
+                            {% for employee in admin_attention.lagging_employees %}
+                                <a href="{% url 'employee_detail' employee.user.id %}" class="attention-item attention-item--with-avatar">
+                                    {% include 'tasks/partials/avatar.html' with avatar_url=employee.avatar_url avatar_initials=employee.avatar_initials avatar_alt=employee.name avatar_class='avatar--small' avatar_size=40 %}
+                                    <span class="attention-item__meta">
+                                        <strong>{{ employee.name }}</strong>
+                                        <span class="muted">{{ employee.overdue_count }} <span data-i18n="admin.overdueTasks">forsinkede opgaver</span></span>
+                                    </span>
+                                </a>
+                            {% empty %}
+                                <p class="muted" data-i18n="admin.noLaggingEmployees">Ingen medarbejdere er bagud lige nu.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="surface-card section-stack" id="task-requests">
+                        <div>
+                            <p class="eyebrow" data-i18n="chat.requestsEyebrow">Opgavedialog</p>
+                            <h4 class="section-title" data-i18n="chat.requestsTitle">Foresporgsler fra medarbejdere</h4>
+                        </div>
+                        <div class="attention-list" data-home-request-list>
+                            {% for request in task_requests %}
+                                <a href="{{ request.detail_url }}#task-chat" class="attention-item attention-item--with-avatar">
+                                    {% include 'tasks/partials/avatar.html' with avatar_url=request.avatar_url avatar_initials=request.avatar_initials avatar_alt=request.author_name avatar_class='avatar--small' avatar_size=40 %}
+                                    <span class="attention-item__meta">
+                                        <strong>{{ request.author_name }} &middot; {{ request.task_title }}</strong>
+                                        <div class="task-meta">
+                                            <span class="badge badge--status badge--status-paused" data-i18n="{{ request.kind_label_key }}">{{ request.kind_label }}</span>
+                                            <span class="badge">{{ request.created_at_text }}</span>
+                                        </div>
+                                        <span class="muted">{{ request.body_preview }}</span>
+                                    </span>
+                                </a>
+                            {% empty %}
+                                <p class="muted" data-i18n="chat.noRequests">Ingen beskeder endnu.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </section>
+        {% elif employee_summary %}
+            <section class="surface-card employee-focus" data-reveal data-employee-focus>
+                <div class="actions-row actions-row--between">
+                    <div class="avatar-stack employee-focus__identity">
+                        {% include 'tasks/partials/avatar.html' with avatar_url=employee_summary.avatar_url avatar_initials=employee_summary.avatar_initials avatar_alt=employee_summary.name avatar_class='avatar--medium' avatar_size=48 %}
+                        <div>
+                            <p class="eyebrow" data-i18n="employee.workspaceEyebrow">Arbejdszone</p>
+                            <h3 class="section-title" data-i18n="employee.workspaceTitle">Fokus pa dine opgaver</h3>
+                        </div>
+                    </div>
+                    <span class="badge badge--{{ employee_summary.status }}" data-status-badge="{{ employee_summary.status }}" data-employee-focus-status="{{ employee_summary.status }}">{{ employee_summary.status_label }}</span>
+                </div>
+                <div class="stats-grid stats-grid--wide">
+                    <div class="stat-card">
+                        <span data-i18n="employee.currentStage">Aktuelt trin</span>
+                        {% if employee_summary.current_stage_key %}
+                            <strong data-employee-focus-stage data-i18n="{{ employee_summary.current_stage_key }}">Awaiting assignment</strong>
+                        {% else %}
+                            <strong data-employee-focus-stage>{{ employee_summary.current_stage }}</strong>
+                        {% endif %}
+                    </div>
+                    <div class="stat-card">
+                        <span data-i18n="employee.completedTasks">Faerdige opgaver</span>
+                        <strong data-employee-focus-completed>{{ employee_summary.completed_count }}</strong>
+                    </div>
+                    <div class="stat-card">
+                        <span data-i18n="employee.pendingTasks">Tilbage</span>
+                        <strong data-employee-focus-pending>{{ employee_summary.pending_count }}</strong>
+                    </div>
+                    <div class="stat-card">
+                        <span data-i18n="employee.progress">Fremdrift</span>
+                        <strong data-employee-focus-progress>{{ employee_summary.progress_percent }}%</strong>
+                    </div>
+                </div>
+                <div class="task-meta task-meta--summary">
+                    <span class="badge badge--primary"><span data-employee-focus-active>{{ employee_summary.in_progress_count }}</span> <span data-i18n="task.inProgressShort">i gang</span></span>
+                    <span class="badge badge--paused{% if not employee_summary.paused_count %} is-hidden{% endif %}" data-employee-focus-paused-wrap><span data-employee-focus-paused>{{ employee_summary.paused_count }}</span> <span data-i18n="task.pausedShort">pa pause</span></span>
+                </div>
+                <div class="overall-progress">
+                    <div class="overall-progress__header">
+                        <strong data-i18n="employee.personalProgress">Din fremdrift</strong>
+                        <span class="badge badge--primary" data-employee-focus-progress-label>{{ employee_summary.progress_percent }}%</span>
+                    </div>
+                    <div class="progress-bar progress-bar--board" aria-hidden="true">
+                        <div class="progress-bar__value" data-employee-focus-progress-bar style="--progress: {{ employee_summary.progress_percent }};"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="surface-card employee-attention{% if not employee_summary.has_attention %} is-hidden{% endif %}" data-reveal data-employee-attention-wrap>
+                <div class="section-stack">
+                    <div>
+                        <p class="eyebrow" data-i18n="employee.attentionEyebrow">Fokus nu</p>
+                        <h3 class="section-title" data-i18n="employee.attentionTitle">Ting der kraever handling</h3>
+                    </div>
+                    <div class="attention-list" data-employee-attention-list>
+                        {% if employee_summary.priority_tasks %}
+                            {% for task in employee_summary.priority_tasks %}
+                                <a href="{{ task.detail_url }}" class="attention-item">
+                                    <strong>{{ task.title }}</strong>
+                                    <div class="task-meta">
+                                        <span class="badge badge--status badge--status-{{ task.status }}" data-status-badge="{{ task.status }}">{{ task.status_label }}</span>
+                                        {% if task.is_overdue %}
+                                            <span class="badge badge--warning" data-i18n="admin.overdueSummary">Forsinkede opgaver</span>
+                                        {% elif task.is_due_soon %}
+                                            <span class="badge" data-i18n="admin.dueSoon">Snart deadline</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if task.deadline_text %}
+                                        <span class="muted">{{ task.deadline_text }}</span>
+                                    {% endif %}
+                                </a>
+                            {% endfor %}
+                        {% elif employee_summary.needs_assignment %}
+                            <p class="muted" data-i18n="employee.awaitingAssignmentHelp">Du har ingen aktive opgaver endnu. Nye opgaver vises her sa snart de bliver tildelt.</p>
+                        {% else %}
+                            <p class="muted" data-i18n="employee.noPriorityTasks">Intet kraever handling lige nu.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </section>
+
+            {% if show_employee_intro %}
+                <section class="surface-card onboarding-card" data-reveal data-onboarding-card data-onboarding-key="employee-board">
+                    <div class="actions-row actions-row--between">
+                        <div>
+                            <p class="eyebrow" data-i18n="onboarding.eyebrow">Quick start</p>
+                            <h3 class="section-title" data-i18n="onboarding.title">A faster way to work through the day</h3>
+                        </div>
+                        <button type="button" class="ghost-button ghost-button--compact" data-onboarding-dismiss data-i18n="common.dismiss">Dismiss</button>
+                    </div>
+                    <div class="onboarding-card__steps">
+                        <article class="onboarding-step">
+                            <span class="badge badge--primary">1</span>
+                            <strong data-i18n="onboarding.stepTasks">Use the board to keep active work in focus.</strong>
+                        </article>
+                        <article class="onboarding-step">
+                            <span class="badge badge--primary">2</span>
+                            <strong data-i18n="onboarding.stepStatus">Update the task status directly from each card.</strong>
+                        </article>
+                        <article class="onboarding-step">
+                            <span class="badge badge--primary">3</span>
+                            <strong data-i18n="onboarding.stepList">Open the list or wall view when you need more context.</strong>
+                        </article>
+                    </div>
+                    <div class="inline-actions">
+                        <a href="{% url 'task_list_page' %}" class="ghost-button" data-i18n="nav.taskList">Opgaveliste</a>
+                        <a href="{% url 'task_wall' %}" class="ghost-button" data-i18n="nav.taskWall">Opgavevaeg</a>
+                    </div>
+                </section>
+            {% endif %}
+        {% endif %}
+
+        <section class="surface-card controls" data-reveal>
+            <div class="actions-row">
+                <input
+                    type="search"
+                    class="search-input"
+                    placeholder="Sog efter titel, beskrivelse eller ansvarlig"
+                    aria-label="Sog i opgaver"
+                    data-task-search
+                    data-i18n-placeholder="board.searchPlaceholder"
+                    data-i18n-aria-label="board.searchAria"
+                    value="{{ current_query }}"
+                >
+                <select class="select-input select-input--compact" data-priority-filter>
+                    <option value="all"{% if current_priority == 'all' %} selected{% endif %} data-i18n="filters.priorityAll">Alle prioriteter</option>
+                    <option value="high"{% if current_priority == 'high' %} selected{% endif %} data-i18n="priority.high">High</option>
+                    <option value="medium"{% if current_priority == 'medium' %} selected{% endif %} data-i18n="priority.medium">Medium</option>
+                    <option value="low"{% if current_priority == 'low' %} selected{% endif %} data-i18n="priority.low">Low</option>
+                </select>
+            </div>
+            <div class="filters" aria-label="Filtrer opgaver" data-i18n-aria-label="board.filtersAria">
+                <button type="button" class="filter-button{% if current_filter == 'all' %} is-active{% endif %}" data-filter="all" data-i18n="board.filterAll">Alle</button>
+                <button type="button" class="filter-button{% if current_filter == 'active' %} is-active{% endif %}" data-filter="active" data-i18n="board.filterActive">Aktive</button>
+                <button type="button" class="filter-button{% if current_filter == 'completed' %} is-active{% endif %}" data-filter="completed" data-i18n="board.filterCompleted">Faerdige</button>
+                <button type="button" class="filter-button{% if current_filter == 'deadline' %} is-active{% endif %}" data-filter="deadline" data-i18n="board.filterDeadline">Har deadline</button>
+            </div>
+        </section>
+
+        <section class="surface-card list-card" data-reveal>
+            <div class="actions-row actions-row--between">
+                <div>
+                    <p class="eyebrow" data-i18n="board.listLabel">Task list</p>
+                    <h3 class="section-title" data-i18n="board.listTitle">Alle opgaver</h3>
+                </div>
+                <span class="badge"><span data-stat="visible">{{ stats.total }}</span> <span data-i18n="board.visible">synlige</span></span>
+            </div>
+
+            {% if request.user.is_superuser %}
+                <form method="post" action="{% url 'bulk_delete_tasks' %}" class="bulk-actions" data-bulk-delete-form data-confirm-key="board.bulkDeleteConfirm">
+                    {% csrf_token %}
+                    <div class="bulk-actions__summary">
+                        <span class="badge badge--primary" data-bulk-selection-count>0</span>
+                        <span class="muted" data-bulk-selection-text data-i18n="board.bulkSelectionCount">0 valgt</span>
+                    </div>
+                    <div class="inline-actions">
+                        <button type="button" class="ghost-button" data-select-visible data-i18n="board.selectVisible">Vaelg synlige</button>
+                        <button type="button" class="ghost-button" data-clear-selection data-i18n="board.clearSelection">Ryd valg</button>
+                        <button type="submit" class="button" data-bulk-delete-button data-i18n="board.bulkDelete" disabled>Slet valgte</button>
+                    </div>
+                    <div data-bulk-selection-inputs></div>
+                </form>
+            {% endif %}
+
+            <div class="board-list-sections">
+                <section class="board-task-section" data-board-group="active" data-has-items="{% if stats.active %}true{% else %}false{% endif %}">
+                    <div class="actions-row actions-row--between board-task-section__header">
+                        <div>
+                            <p class="eyebrow" data-i18n="board.activeListLabel">I fokus</p>
+                            <h4 class="section-title" data-i18n="board.activeListTitle">Aktive opgaver</h4>
+                        </div>
+                        <span class="badge"><span data-board-group-count="active">{{ stats.active }}</span> <span data-i18n="board.visible">synlige</span></span>
+                    </div>
+                    <div class="task-list" data-task-list-active>
+                        {% if stats.active %}
+                            {% for task in tasks %}
+                                {% if not task.current_is_completed %}
+                                    {% include 'tasks/partials/board_task_item.html' with task=task %}
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state empty-state--compact" data-empty-state>
+                                <h3 class="section-title" data-i18n="board.activeEmptyTitle">Ingen aktive opgaver</h3>
+                                <p data-i18n="board.activeEmptyText">Alt aktuelt arbejde er faerdigt eller afventer nye opgaver.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </section>
+
+                <section class="board-task-section board-task-section--completed{% if not stats.completed %} is-hidden{% endif %}" data-board-group="completed" data-has-items="{% if stats.completed %}true{% else %}false{% endif %}">
+                    <div class="actions-row actions-row--between board-task-section__header">
+                        <div>
+                            <p class="eyebrow" data-i18n="board.completedListLabel">Nyligt afsluttet</p>
+                            <h4 class="section-title" data-i18n="board.completedListTitle">Faerdige opgaver</h4>
+                        </div>
+                        <span class="badge"><span data-board-group-count="completed">{{ stats.completed }}</span> <span data-i18n="board.visible">synlige</span></span>
+                    </div>
+                    <div class="task-list task-list--completed" data-task-list-completed>
+                        {% if stats.completed %}
+                            {% for task in tasks %}
+                                {% if task.current_is_completed %}
+                                    {% include 'tasks/partials/board_task_item.html' with task=task %}
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state empty-state--compact" data-empty-state>
+                                <h3 class="section-title" data-i18n="board.completedEmptyTitle">Ingen afsluttede opgaver</h3>
+                                <p data-i18n="board.completedEmptyText">Faerdige opgaver samles her, sa hovedlisten holder fokus pa det aabne arbejde.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </section>
+            </div>
+        </section>
+    </div>
+{% endblock %}
