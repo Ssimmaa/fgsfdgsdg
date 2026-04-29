@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: my-task-manager
+    runtime: python
+    buildCommand: bash build.sh
+    startCommand: gunicorn tasker.wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: DJANGO_DEBUG
+        value: False
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: my-task-manager-db
+          property: connectionString
+      - key: DJANGO_SESSION_COOKIE_SECURE
+        value: True
+      - key: DJANGO_CSRF_COOKIE_SECURE
+        value: True
+
+databases:
+  - name: my-task-manager-db
+    databaseName: my_task_manager
+    user: my_task_manager
