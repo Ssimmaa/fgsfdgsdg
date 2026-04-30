@@ -1,0 +1,28 @@
+<div class="surface-card section-stack danger-zone">
+    <div>
+        <p class="eyebrow" data-i18n="account.deleteEyebrow">Farezone</p>
+        <h4 class="section-title" data-i18n="{{ title_key }}">Slet konto</h4>
+        <p class="muted" data-i18n="{{ help_key }}">Denne handling fjerner kontoen permanent fra arbejdsomradet.</p>
+    </div>
+    {% if note_key %}
+        <p class="form-help danger-zone__note" data-i18n="{{ note_key }}">Opgaverne bliver i systemet, men kontoen fjernes permanent.</p>
+    {% endif %}
+    {% if can_delete %}
+        <form method="post" action="{{ action_url }}" data-confirm-key="{{ confirm_key }}" class="section-stack">
+            {% csrf_token %}
+            {% include 'tasks/partials/form_errors.html' with form=account_delete_form %}
+            {% if delete_requires_password %}
+                <div class="form-field">
+                    <label for="{{ account_delete_form.current_password.id_for_label }}" data-i18n="password.current">Nuvaerende adgangskode</label>
+                    {{ account_delete_form.current_password }}
+                    <p class="form-help" data-i18n="account.deletePasswordHelp">Indtast din nuvaerende adgangskode for at bekraefte sletningen.</p>
+                </div>
+            {% else %}
+                <p class="form-help danger-zone__note" data-i18n="{{ delete_no_password_help_key|default:'admin.deleteAccountNoPasswordHelp' }}">Du kan slette denne konto direkte uden at indtaste din adgangskode.</p>
+            {% endif %}
+            <button type="submit" class="ghost-button danger-button" data-i18n="{{ action_key }}">Slet konto</button>
+        </form>
+    {% elif blocked_key %}
+        <p class="form-help danger-zone__note" data-i18n="{{ blocked_key }}">Denne konto kan ikke slettes herfra.</p>
+    {% endif %}
+</div>

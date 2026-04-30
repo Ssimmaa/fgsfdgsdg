@@ -1,0 +1,213 @@
+<div class="form-grid task-form-core">
+    {% if form.template_id and form.template_id.value %}
+        <input type="hidden" name="template_id" value="{{ form.template_id.value }}">
+        <div class="form-field form-field--full">
+            <div class="surface-card">
+                <span class="badge badge--primary" data-i18n="templates.appliedBadge">Skabelon aktiv</span>
+                <p class="muted" data-i18n="templates.appliedHelp">Denne opgave blev forudfyldt fra en skabelon. Du kan stadig tilpasse alle felter, for du gemmer.</p>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="form-field form-field--full">
+        <label for="{{ form.title.id_for_label }}" data-i18n="form.taskTitle">Opgavetitel</label>
+        {{ form.title }}
+    </div>
+
+    <div class="form-field form-field--full">
+        <label for="{{ form.description.id_for_label }}" data-i18n="form.description">Beskrivelse</label>
+        {{ form.description }}
+    </div>
+
+    {% if show_assignment_fields %}
+        <div class="form-field">
+            <label for="{{ form.assigned_to.id_for_label }}" data-i18n="form.assignee">Ansvarlig</label>
+            {{ form.assigned_to }}
+        </div>
+    {% else %}
+        <div class="form-field">
+            <div class="surface-card task-owner-note">
+                <span class="badge badge--primary" data-i18n="form.personalTaskOwner">Personlig opgave</span>
+                <p class="muted" data-i18n="form.personalTaskHelp">Opgaven bliver automatisk oprettet pa din egen konto.</p>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="form-field">
+        <label for="{{ form.deadline.id_for_label }}" data-i18n="common.deadline">Deadline</label>
+        {{ form.deadline }}
+    </div>
+
+    <div class="form-field">
+        <label for="{{ form.priority.id_for_label }}" data-i18n="form.priority">Prioritet</label>
+        {{ form.priority }}
+    </div>
+</div>
+
+{% if page_mode == 'create' %}
+    <details class="form-advanced">
+        <summary>
+            <span data-i18n="form.advancedOptions">Flere muligheder</span>
+            <small data-i18n="form.advancedOptionsHelp">Filer, deltagere, checkliste og skabelon</small>
+        </summary>
+
+        <div class="section-stack">
+            {% if show_assignment_fields and form.assigned_users %}
+                <div class="form-grid">
+                    <div class="form-field form-field--full">
+                        <label for="{{ form.assigned_users.id_for_label }}" data-i18n="form.participants">Deltagere</label>
+                        {{ form.assigned_users }}
+                        <p class="form-help" data-i18n="form.participantsHelp">Vaelg flere brugere, som ogsa skal kunne se og arbejde med opgaven.</p>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if form.attachments %}
+                <div class="form-grid">
+                    <div class="form-field form-field--full">
+                        <label for="{{ form.attachments.id_for_label }}" data-i18n="attachments.add">Vedhaeft filer</label>
+                        {{ form.attachments }}
+                        {% if form.attachments.help_text %}
+                            <p class="form-help" data-i18n="attachments.formHelp" data-i18n-var-size="{{ attachment_size_limit_mb }}">Du kan vedhaefte filer op til {{ attachment_size_limit_mb }} MB.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <section class="subtask-builder">
+                <div class="actions-row actions-row--between">
+                    <div>
+                        <p class="eyebrow" data-i18n="detail.checklist">Checkliste</p>
+                        <h4 class="section-title" data-i18n="detail.subtasks">Underopgaver</h4>
+                    </div>
+                    <button type="button" class="ghost-button" data-add-subtask data-i18n="form.addSubtask">Tilfoj underopgave</button>
+                </div>
+                <div data-subtasks-container class="section-stack"></div>
+            </section>
+
+            {% if form.save_as_template %}
+                <section class="surface-card section-stack">
+                    <div>
+                        <p class="eyebrow" data-i18n="templates.eyebrow">Skabeloner</p>
+                        <h4 class="section-title" data-i18n="templates.saveTitle">Gem som skabelon</h4>
+                    </div>
+                    <label class="checkbox-row">
+                        {{ form.save_as_template }}
+                        <span data-i18n="templates.saveToggle">Gem denne opgave som skabelon</span>
+                    </label>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="{{ form.template_name.id_for_label }}" data-i18n="templates.name">Skabelonnavn</label>
+                            {{ form.template_name }}
+                        </div>
+                        <div class="form-field">
+                            <label for="{{ form.template_recurrence.id_for_label }}" data-i18n="templates.recurrence">Gentagelse</label>
+                            {{ form.template_recurrence }}
+                        </div>
+                        <div class="form-field">
+                            <label for="{{ form.template_deadline_days.id_for_label }}" data-i18n="templates.deadlineOffset">Deadline forskydning (dage)</label>
+                            {{ form.template_deadline_days }}
+                        </div>
+                    </div>
+                </section>
+            {% endif %}
+        </div>
+    </details>
+{% else %}
+    <div class="form-grid">
+        {% if show_assignment_fields and form.assigned_users %}
+            <div class="form-field form-field--full">
+                <label for="{{ form.assigned_users.id_for_label }}" data-i18n="form.participants">Deltagere</label>
+                {{ form.assigned_users }}
+                <p class="form-help" data-i18n="form.participantsHelp">Vaelg flere brugere, som ogsa skal kunne se og arbejde med opgaven.</p>
+            </div>
+        {% endif %}
+
+        {% if form.attachments %}
+            <div class="form-field form-field--full">
+                <label for="{{ form.attachments.id_for_label }}" data-i18n="attachments.add">Vedhaeft filer</label>
+                {{ form.attachments }}
+                {% if form.attachments.help_text %}
+                    <p class="form-help" data-i18n="attachments.formHelp" data-i18n-var-size="{{ attachment_size_limit_mb }}">Du kan vedhaefte filer op til {{ attachment_size_limit_mb }} MB.</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    <section class="subtask-builder">
+        <div class="actions-row actions-row--between">
+            <div>
+                <p class="eyebrow" data-i18n="detail.checklist">Checkliste</p>
+                <h4 class="section-title" data-i18n="detail.subtasks">Underopgaver</h4>
+            </div>
+            <button type="button" class="ghost-button" data-add-subtask data-i18n="form.addSubtask">Tilfoj underopgave</button>
+        </div>
+
+        <div data-subtasks-container class="section-stack">
+            {% if task %}
+                {% for subtask in task.subtasks.all %}
+                    <div class="subtask-row" data-subtask-row>
+                        <input
+                            type="text"
+                            name="subtask_title_{{ subtask.id }}"
+                            value="{{ subtask.title }}"
+                            class="text-input"
+                            aria-label="Underopgavens titel"
+                            data-i18n-aria-label="form.subtaskTitleAria"
+                            data-existing-subtask-title
+                        >
+                        <div class="subtask-row__actions">
+                            <input
+                                type="datetime-local"
+                                name="subtask_deadline_{{ subtask.id }}"
+                                value="{{ subtask.deadline|date:'Y-m-d\\TH:i' }}"
+                                class="text-input"
+                                aria-label="Underopgavens deadline"
+                                data-i18n-aria-label="form.subtaskDeadlineAria"
+                            >
+                            <button type="button" class="ghost-button" data-remove-subtask data-i18n="common.remove">Fjern</button>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </section>
+
+    {% if form.save_as_template %}
+        <section class="surface-card section-stack">
+            <div>
+                <p class="eyebrow" data-i18n="templates.eyebrow">Skabeloner</p>
+                <h4 class="section-title" data-i18n="templates.saveTitle">Gem som skabelon</h4>
+                <p class="muted" data-i18n="templates.saveHelp">Brug skabeloner til gentagne opgaver, onboarding-forlob og faste operationelle flows.</p>
+            </div>
+            <label class="checkbox-row">
+                {{ form.save_as_template }}
+                <span data-i18n="templates.saveToggle">Gem denne opgave som skabelon</span>
+            </label>
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="{{ form.template_name.id_for_label }}" data-i18n="templates.name">Skabelonnavn</label>
+                    {{ form.template_name }}
+                </div>
+                <div class="form-field">
+                    <label for="{{ form.template_recurrence.id_for_label }}" data-i18n="templates.recurrence">Gentagelse</label>
+                    {{ form.template_recurrence }}
+                </div>
+                <div class="form-field">
+                    <label for="{{ form.template_deadline_days.id_for_label }}" data-i18n="templates.deadlineOffset">Deadline forskydning (dage)</label>
+                    {{ form.template_deadline_days }}
+                </div>
+            </div>
+        </section>
+    {% endif %}
+{% endif %}
+
+<template id="subtask-template">
+    <div class="subtask-row">
+        <input type="text" name="new_subtask_title" class="text-input" placeholder="Ny underopgave" aria-label="Underopgavens titel" data-i18n-placeholder="form.newSubtaskPlaceholder" data-i18n-aria-label="form.subtaskTitleAria">
+        <div class="subtask-row__actions">
+            <input type="datetime-local" name="new_subtask_deadline" class="text-input" aria-label="Underopgavens deadline" data-i18n-aria-label="form.subtaskDeadlineAria">
+            <button type="button" class="ghost-button" data-remove-subtask data-i18n="common.remove">Fjern</button>
+        </div>
+    </div>
+</template>
