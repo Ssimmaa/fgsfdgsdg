@@ -52,6 +52,76 @@
             </div>
         </section>
 
+        <section class="deadline-runway surface-card{% if not deadline_runway %} deadline-runway--empty{% endif %}" data-reveal>
+            <div class="deadline-runway__header">
+                <div>
+                    <p class="eyebrow" data-i18n="board.deadlineRunwayEyebrow">Radar</p>
+                    <h3 class="section-title" data-i18n="board.deadlineRunwayTitle">Naeste deadlines</h3>
+                </div>
+                <a href="?filter=deadline" class="ghost-button ghost-button--compact" data-i18n="board.showDeadlines">Vis deadlines</a>
+            </div>
+
+            {% if deadline_runway %}
+                <div class="deadline-runway__track">
+                    {% for item in deadline_runway %}
+                        <a href="{% url 'task_detail' item.task.id %}" class="deadline-runway__item deadline-runway__item--{{ item.timing_class }}">
+                            <span class="deadline-runway__date">
+                                <strong>{{ item.task.deadline|date:"d" }}</strong>
+                                <span>{{ item.task.deadline|date:"M" }}</span>
+                            </span>
+                            <span class="deadline-runway__body">
+                                <span class="badge badge--status badge--status-{{ item.task.current_status }}" data-i18n="{{ item.timing_key }}">
+                                    {% if item.timing_class == 'danger' %}Forsinket{% elif item.timing_class == 'accent' %}I dag{% else %}Planlagt{% endif %}
+                                </span>
+                                <strong>{{ item.task.title }}</strong>
+                                <span class="muted">{{ item.task.deadline|date:"H:i" }} · {{ item.task.current_status_label }}</span>
+                            </span>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state empty-state--compact deadline-runway__empty">
+                    <h3 class="section-title" data-i18n="board.noDeadlinesTitle">Ingen deadlines lige nu</h3>
+                    <p data-i18n="board.noDeadlinesText">Der er ingen aabne opgaver med deadline i din visning.</p>
+                </div>
+            {% endif %}
+        </section>
+
+        <section class="surface-card attention-strip{% if not attention_tasks %} attention-strip--calm{% endif %}" data-reveal>
+            <div class="actions-row actions-row--between">
+                <div>
+                    <p class="eyebrow" data-i18n="board.attentionEyebrow">Prioritet</p>
+                    <h3 class="section-title" data-i18n="board.attentionTitle">Ting der kraever opmaerksomhed</h3>
+                </div>
+                <span class="badge badge--warning">{{ attention_tasks|length }} <span data-i18n="board.attentionCount">vigtige</span></span>
+            </div>
+
+            {% if attention_tasks %}
+                <div class="attention-strip__grid">
+                    {% for task in attention_tasks %}
+                        <a href="{% url 'task_detail' task.id %}" class="attention-task-card">
+                            <span class="attention-task-card__mark" aria-hidden="true"></span>
+                            <span class="attention-task-card__body">
+                                <strong>{{ task.title }}</strong>
+                                <span class="task-meta">
+                                    <span class="badge badge--priority badge--priority-{{ task.priority }}">{{ task.get_priority_display }}</span>
+                                    <span class="badge badge--status badge--status-{{ task.current_status }}">{{ task.current_status_label }}</span>
+                                    {% if task.deadline %}
+                                        <span class="badge badge--warning">{{ task.deadline|date:"d.m.Y H:i" }}</span>
+                                    {% endif %}
+                                </span>
+                            </span>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state empty-state--compact attention-strip__empty">
+                    <h3 class="section-title" data-i18n="board.attentionCalmTitle">Alt ser roligt ud</h3>
+                    <p data-i18n="board.attentionCalmText">Ingen aabne opgaver med hoj prioritet eller deadline lige nu.</p>
+                </div>
+            {% endif %}
+        </section>
+
         {% if request.user.is_superuser %}
             <section class="surface-card admin-board-summary" data-reveal>
                 <div class="actions-row actions-row--between">
